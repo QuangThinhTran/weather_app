@@ -18,18 +18,27 @@ class WeatherIcon extends StatelessWidget {
       width: size,
       height: size,
       fit: BoxFit.contain,
-      placeholder: (context, url) => SizedBox(
-        width: size,
-        height: size,
+      memCacheWidth: (size * MediaQuery.of(context).devicePixelRatio).round(),
+      memCacheHeight: (size * MediaQuery.of(context).devicePixelRatio).round(),
+      maxWidthDiskCache: (size * 2).round(),
+      maxHeightDiskCache: (size * 2).round(),
+      fadeInDuration: const Duration(milliseconds: 200),
+      fadeOutDuration: const Duration(milliseconds: 100),
+      placeholder: (context, url) => SizedBox.square(
+        dimension: size,
         child: const Center(
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-      errorWidget: (context, url, error) => Icon(
-        _getWeatherIconFromUrl(iconUrl),
-        size: size,
-        color: _getWeatherColorFromUrl(iconUrl),
-      ),
+      errorWidget: (context, url, error) => _buildFallbackIcon(),
+    );
+  }
+
+  Widget _buildFallbackIcon() {
+    return Icon(
+      _getWeatherIconFromUrl(iconUrl),
+      size: size,
+      color: _getWeatherColorFromUrl(iconUrl),
     );
   }
 

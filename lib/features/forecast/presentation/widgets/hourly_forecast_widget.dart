@@ -18,18 +18,16 @@ class HourlyForecastWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get next 24 hours starting from current hour
+    // Get next 24 hours starting from current hour (cached computation)
     final now = DateTime.now();
-    final next24Hours = hourlyForecasts
-        .where((forecast) => 
-            forecast.dateTime.isAfter(now) && 
-            forecast.dateTime.isBefore(now.add(const Duration(hours: 24))))
-        .take(24)
-        .toList();
+    final endTime = now.add(const Duration(hours: 24));
+    final next24Hours = _getNext24Hours(now, endTime);
 
     if (next24Hours.isEmpty) {
       return const SizedBox.shrink();
     }
+
+    final theme = Theme.of(context);
 
     return Card(
       margin: const EdgeInsets.symmetric(
@@ -41,40 +39,30 @@ class HourlyForecastWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.schedule,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: ThemeConstants.spacingSmall),
-                Text(
-                  'DỰ BÁO THEO GIỜ',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
+            _buildHeaderRow(theme),
             const SizedBox(height: ThemeConstants.spacingMedium),
-            SizedBox(
-              height: 100,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: next24Hours.length,
-                separatorBuilder: (context, index) => 
-                    const SizedBox(width: ThemeConstants.spacingSmall),
-                itemBuilder: (context, index) {
-                  final forecast = next24Hours[index];
-                  final isNow = index == 0;
-                  
-                  return GestureDetector(
-                    onTap: () => _showDetailedWeather(context, forecast),
-                    child: _buildHourlyItem(context, forecast, isNow),
-                  );
-                },
+            RepaintBoundary(
+              child: SizedBox(
+                height: 100,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  physics: const BouncingScrollPhysics(),
+                  cacheExtent: 800.0,
+                  itemCount: next24Hours.length,
+                  separatorBuilder: (context, index) => 
+                      const SizedBox(width: ThemeConstants.spacingSmall),
+                  itemBuilder: (context, index) {
+                    final forecast = next24Hours[index];
+                    final isNow = index == 0;
+                    
+                    return RepaintBoundary(
+                      child: GestureDetector(
+                        onTap: () => _showDetailedWeather(context, forecast),
+                        child: _buildHourlyItem(theme, forecast, isNow),
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ],
@@ -83,15 +71,43 @@ class HourlyForecastWidget extends StatelessWidget {
     );
   }
 
+  List<HourlyForecast> _getNext24Hours(DateTime now, DateTime endTime) {
+    return hourlyForecasts
+        .where((forecast) => forecast.dateTime.isAfter(now) && forecast.dateTime.isBefore(endTime))
+        .take(24)
+        .toList();
+  }
+
+  Widget _buildHeaderRow(ThemeData theme) {
+    return Row(
+      children: [
+        Icon(
+          Icons.schedule,
+          size: 20,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: ThemeConstants.spacingSmall),
+        Text(
+          'DỰ BÁO THEO GIỜ',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
   void _showDetailedWeather(BuildContext context, HourlyForecast selectedHour) {
-    // Get hourly forecasts for the selected day
+    // Get hourly forecasts for the selected day (optimized)
     final selectedDate = selectedHour.dateTime;
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
+    final startOfDayMinusOne = startOfDay.subtract(const Duration(minutes: 1));
     
     final dayHourlyForecasts = hourlyForecasts
         .where((forecast) => 
-            forecast.dateTime.isAfter(startOfDay.subtract(const Duration(minutes: 1))) &&
+            forecast.dateTime.isAfter(startOfDayMinusOne) &&
             forecast.dateTime.isBefore(endOfDay))
         .toList();
     
@@ -111,7 +127,7 @@ class HourlyForecastWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildHourlyItem(BuildContext context, HourlyForecast forecast, bool isNow) {
+  Widget _buildHourlyItem(ThemeData theme, HourlyForecast forecast, bool isNow) {
     final timeFormat = DateFormat('HH:mm');
     final displayTime = isNow ? 'Bây giờ' : timeFormat.format(forecast.dateTime);
     
@@ -121,48 +137,44 @@ class HourlyForecastWidget extends StatelessWidget {
         vertical: ThemeConstants.spacingSmall,
         horizontal: ThemeConstants.spacingXSmall,
       ),
-      decoration: BoxDecoration(
-        color: isNow 
-            ? Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3)
-            : Colors.transparent,
+      decoration: isNow ? BoxDecoration(
+        color: theme.colorScheme.primaryContainer.withOpacity(0.3),
         borderRadius: BorderRadius.circular(ThemeConstants.radiusSmall),
-        border: isNow 
-            ? Border.all(
-                color: Theme.of(context).colorScheme.primary.withOpacity(0.3),
-                width: 1,
-              )
-            : null,
-      ),
+        border: Border.all(
+          color: theme.colorScheme.primary.withOpacity(0.3),
+          width: 1,
+        ),
+      ) : null,
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           // Time
           Text(
             displayTime,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 12,
               fontWeight: isNow ? FontWeight.w600 : FontWeight.normal,
               color: isNow 
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.onSurface.withOpacity(0.7),
+                  ? theme.colorScheme.primary
+                  : theme.colorScheme.onSurface.withOpacity(0.7),
             ),
             textAlign: TextAlign.center,
           ),
           
           // Weather icon
-          WeatherIcon(
-            iconUrl: forecast.iconUrl,
-            size: 28,
+          RepaintBoundary(
+            child: WeatherIcon(
+              iconUrl: forecast.iconUrl,
+              size: 28,
+            ),
           ),
           
           // Temperature
           Text(
             '${forecast.temperature.round()}°',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: theme.textTheme.titleSmall?.copyWith(
               fontWeight: FontWeight.w600,
-              color: isNow 
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
+              color: isNow ? theme.colorScheme.primary : null,
             ),
           ),
           
@@ -179,7 +191,7 @@ class HourlyForecastWidget extends StatelessWidget {
                 const SizedBox(width: 2),
                 Text(
                   '${forecast.precipitationChance}%',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 10,
                     color: Colors.blue.shade400,
                   ),

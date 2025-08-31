@@ -43,16 +43,15 @@ class WeatherModel {
     final current = json['current'] as Map<String, dynamic>;
     final condition = current['condition'] as Map<String, dynamic>;
 
-    // Try to get astronomy data from forecast if available
+    // Efficiently extract astronomy data from forecast if available
     String? sunrise;
     String? sunset;
     
-    if (json['forecast'] != null) {
-      final forecast = json['forecast'] as Map<String, dynamic>;
+    final forecast = json['forecast'] as Map<String, dynamic>?;
+    if (forecast != null) {
       final forecastDays = forecast['forecastday'] as List<dynamic>?;
-      if (forecastDays != null && forecastDays.isNotEmpty) {
-        final todayForecast = forecastDays[0] as Map<String, dynamic>;
-        final astro = todayForecast['astro'] as Map<String, dynamic>?;
+      if (forecastDays?.isNotEmpty == true) {
+        final astro = (forecastDays![0] as Map<String, dynamic>)['astro'] as Map<String, dynamic>?;
         if (astro != null) {
           sunrise = astro['sunrise'] as String?;
           sunset = astro['sunset'] as String?;
@@ -63,18 +62,18 @@ class WeatherModel {
     return WeatherModel(
       cityName: location['name'] as String,
       country: location['country'] as String,
-      temperature: (current['temp_c'] as num).toDouble(),
+      temperature: _safeToDouble(current['temp_c']),
       condition: condition['text'] as String,
       iconUrl: 'https:${condition['icon'] as String}',
       humidity: current['humidity'] as int,
-      windSpeed: (current['wind_kph'] as num).toDouble(),
-      pressure: (current['pressure_mb'] as num).toDouble(),
-      feelsLike: (current['feelslike_c'] as num).toDouble(),
-      uvIndex: (current['uv'] as num).toDouble(),
-      visibility: (current['vis_km'] as num).toDouble(),
+      windSpeed: _safeToDouble(current['wind_kph']),
+      pressure: _safeToDouble(current['pressure_mb']),
+      feelsLike: _safeToDouble(current['feelslike_c']),
+      uvIndex: _safeToDouble(current['uv']),
+      visibility: _safeToDouble(current['vis_km']),
       lastUpdated: DateTime.parse(current['last_updated'] as String),
-      latitude: (location['lat'] as num?)?.toDouble(),
-      longitude: (location['lon'] as num?)?.toDouble(),
+      latitude: _safeToDouble(location['lat']),
+      longitude: _safeToDouble(location['lon']),
       sunrise: sunrise,
       sunset: sunset,
     );
@@ -151,25 +150,42 @@ class WeatherModel {
     return WeatherModel(
       cityName: json['cityName'] as String,
       country: json['country'] as String,
-      temperature: (json['temperature'] as num).toDouble(),
+      temperature: _safeToDouble(json['temperature']),
       condition: json['condition'] as String,
       iconUrl: json['iconUrl'] as String,
       humidity: json['humidity'] as int,
-      windSpeed: (json['windSpeed'] as num).toDouble(),
-      pressure: (json['pressure'] as num).toDouble(),
-      feelsLike: (json['feelsLike'] as num).toDouble(),
-      uvIndex: (json['uvIndex'] as num).toDouble(),
-      visibility: (json['visibility'] as num).toDouble(),
+      windSpeed: _safeToDouble(json['windSpeed']),
+      pressure: _safeToDouble(json['pressure']),
+      feelsLike: _safeToDouble(json['feelsLike']),
+      uvIndex: _safeToDouble(json['uvIndex']),
+      visibility: _safeToDouble(json['visibility']),
       lastUpdated: DateTime.parse(json['lastUpdated'] as String),
-      latitude: (json['latitude'] as num?)?.toDouble(),
-      longitude: (json['longitude'] as num?)?.toDouble(),
+      latitude: _safeToDouble(json['latitude']),
+      longitude: _safeToDouble(json['longitude']),
       sunrise: json['sunrise'] as String?,
       sunset: json['sunset'] as String?,
     );
   }
 
-  @override
-  String toString() {
-    return 'WeatherModel(cityName: $cityName, temperature: $temperature°C, condition: $condition)';
+  static double _safeToDouble(dynamic value) {
+    if (value == null) return 0.0;
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return (value as num).toDouble();
   }
+
+  @override
+  String toString() => 'WeatherModel($cityName, ${temperature}°C, $condition)';
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is WeatherModel &&
+        other.cityName == cityName &&
+        other.lastUpdated == lastUpdated;
+  }
+
+  @override
+  int get hashCode => Object.hash(cityName, lastUpdated);
 }

@@ -19,6 +19,7 @@ class DailyForecastWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     // Extend to 10 days if we have less than 10 days from API
     final extendedForecasts = _extendForecastTo10Days(dailyForecasts);
     
@@ -32,58 +33,77 @@ class DailyForecastWidget extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.calendar_today,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: ThemeConstants.spacingSmall),
-                Text(
-                  'DỰ BÁO 10 NGÀY TỚI',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-              ],
-            ),
+            _buildHeaderRow(theme),
             const SizedBox(height: ThemeConstants.spacingMedium),
-            ...extendedForecasts.asMap().entries.map((entry) {
-              final index = entry.key;
-              final forecast = entry.value;
-              final isToday = index == 0;
-              
-              return Column(
-                children: [
-                  GestureDetector(
-                    onTap: () => _showDetailedWeather(context, forecast),
-                    child: _buildDailyItem(context, forecast, isToday),
-                  ),
-                  if (index < extendedForecasts.length - 1)
-                    Divider(
-                      height: 1,
-                      color: Theme.of(context).colorScheme.outline.withOpacity(0.2),
-                    ),
-                ],
-              );
-            }).toList(),
+            RepaintBoundary(
+              child: Column(
+                children: _buildDailyItems(extendedForecasts, theme),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
+  Widget _buildHeaderRow(ThemeData theme) {
+    return Row(
+      children: [
+        Icon(
+          Icons.calendar_today,
+          size: 20,
+          color: theme.colorScheme.primary,
+        ),
+        const SizedBox(width: ThemeConstants.spacingSmall),
+        Text(
+          'DỰ BÁO 10 NGÀY TỚI',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: theme.colorScheme.primary,
+          ),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildDailyItems(List<DailyForecast> extendedForecasts, ThemeData theme) {
+    return extendedForecasts.asMap().entries.map((entry) {
+      final index = entry.key;
+      final forecast = entry.value;
+      final isToday = index == 0;
+      
+      return Column(
+        children: [
+          RepaintBoundary(
+            child: Builder(
+              builder: (context) {
+                return GestureDetector(
+                  onTap: () => _showDetailedWeather(context, forecast),
+                  child: _buildDailyItem(theme, forecast, isToday),
+                );
+              }
+            ),
+          ),
+          if (index < extendedForecasts.length - 1)
+            Divider(
+              height: 1,
+              color: theme.colorScheme.outline.withOpacity(0.2),
+            ),
+        ],
+      );
+    }).toList();
+  }
+
   void _showDetailedWeather(BuildContext context, DailyForecast selectedDay) {
-    // Get hourly forecasts for the selected day
+    // Get hourly forecasts for the selected day (optimized)
     final selectedDate = selectedDay.date;
     final startOfDay = DateTime(selectedDate.year, selectedDate.month, selectedDate.day);
     final endOfDay = startOfDay.add(const Duration(days: 1));
+    final startOfDayMinusOne = startOfDay.subtract(const Duration(minutes: 1));
     
     final dayHourlyForecasts = (hourlyForecasts ?? [])
         .where((forecast) => 
-            forecast.dateTime.isAfter(startOfDay.subtract(const Duration(minutes: 1))) &&
+            forecast.dateTime.isAfter(startOfDayMinusOne) &&
             forecast.dateTime.isBefore(endOfDay))
         .toList();
     
@@ -103,7 +123,7 @@ class DailyForecastWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildDailyItem(BuildContext context, DailyForecast forecast, bool isToday) {
+  Widget _buildDailyItem(ThemeData theme, DailyForecast forecast, bool isToday) {
     final displayDay = isToday ? 'Hôm nay' : _getVietnameseDayName(forecast.date);
     
     return Container(
@@ -115,11 +135,9 @@ class DailyForecastWidget extends StatelessWidget {
             width: 70,
             child: Text(
               displayDay,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
-                color: isToday 
-                    ? Theme.of(context).colorScheme.primary
-                    : null,
+                color: isToday ? theme.colorScheme.primary : null,
               ),
             ),
           ),
@@ -127,9 +145,11 @@ class DailyForecastWidget extends StatelessWidget {
           const SizedBox(width: ThemeConstants.spacingSmall),
           
           // Weather icon
-          WeatherIcon(
-            iconUrl: forecast.iconUrl,
-            size: 32,
+          RepaintBoundary(
+            child: WeatherIcon(
+              iconUrl: forecast.iconUrl,
+              size: 32,
+            ),
           ),
           
           const SizedBox(width: ThemeConstants.spacingMedium),
@@ -148,7 +168,7 @@ class DailyForecastWidget extends StatelessWidget {
                       const SizedBox(width: 2),
                       Text(
                         '${forecast.precipitationChance}%',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        style: theme.textTheme.bodySmall?.copyWith(
                           fontSize: 11,
                           color: Colors.blue.shade400,
                         ),
@@ -163,25 +183,27 @@ class DailyForecastWidget extends StatelessWidget {
           // Min temperature
           Text(
             '${forecast.minTemperature.round()}°',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withOpacity(0.6),
             ),
           ),
           
           const SizedBox(width: ThemeConstants.spacingMedium),
           
           // Temperature bar (visual representation)
-          Container(
-            width: 60,
-            height: 4,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(2),
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue.shade300,
-                  Colors.orange.shade400,
-                  Colors.red.shade400,
-                ],
+          RepaintBoundary(
+            child: Container(
+              width: 60,
+              height: 4,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(2),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.blue.shade300,
+                    Colors.orange.shade400,
+                    Colors.red.shade400,
+                  ],
+                ),
               ),
             ),
           ),
@@ -193,7 +215,7 @@ class DailyForecastWidget extends StatelessWidget {
             width: 35,
             child: Text(
               '${forecast.maxTemperature.round()}°',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.end,

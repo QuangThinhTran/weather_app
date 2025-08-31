@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../domain/repositories/weather_repository.dart';
 import '../../../../core/services/location_service.dart';
@@ -21,6 +22,7 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
     on<RefreshWeather>(_onRefreshWeather);
     on<LoadCachedWeather>(_onLoadCachedWeather);
   }
+
 
   Future<void> _onLoadWeatherByCity(
     LoadWeatherByCity event,
@@ -109,14 +111,10 @@ class WeatherBloc extends Bloc<WeatherEvent, WeatherState> {
       if (position != null) {
         add(LoadWeatherByLocation(position.latitude, position.longitude));
       } else {
-        emit(const WeatherLocationPermissionDenied('Location permission denied'));
+        add(LoadWeatherByCity(''));  // Trigger error handling through proper event
       }
     } catch (e) {
-      if (e is LocationException) {
-        emit(WeatherLocationPermissionDenied(e.toString()));
-      } else {
-        emit(WeatherError('Failed to get location: ${e.toString()}'));
-      }
+      add(LoadWeatherByCity(''));  // Trigger error handling through proper event
     }
   }
 }

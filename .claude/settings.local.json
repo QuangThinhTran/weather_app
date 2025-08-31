@@ -9,7 +9,9 @@
       "Bash(dir:*)",
       "Read(\\/**)",
       "WebFetch(domain:www.weatherapi.com)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(flutter build:*)",
+      "Bash(dart analyze:*)"
     ],
     "deny": [],
     "ask": []
