@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(flutter clean:*)",
+      "Bash(flutter pub:*)",
+      "Bash(dir /s build.gradle)",
+      "Bash(flutter run:*)",
+      "Bash(flutter analyze:*)",
+      "Bash(dir:*)",
+      "Read(\\/**)",
+      "WebFetch(domain:www.weatherapi.com)",
+      "WebSearch"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
