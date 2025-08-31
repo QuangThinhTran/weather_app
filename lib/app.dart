@@ -52,27 +52,52 @@ class WeatherApp extends StatelessWidget {
         onBackground: ThemeConstants.lightOnBackground,
         onError: ThemeConstants.lightOnError,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: ThemeConstants.lightBackground,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
         foregroundColor: ThemeConstants.lightOnBackground,
+        titleTextStyle: const TextStyle(
+          fontSize: ThemeConstants.fontSizeLarge,
+          fontWeight: FontWeight.w600,
+          color: ThemeConstants.lightOnBackground,
+        ),
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: ThemeConstants.elevationMedium,
+        shadowColor: ThemeConstants.lightPrimary.withOpacity(0.1),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ThemeConstants.radiusMedium),
+          borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
+        ),
+        margin: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingMedium,
+          vertical: ThemeConstants.spacingSmall,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          elevation: ThemeConstants.elevationMedium,
+          shadowColor: ThemeConstants.lightPrimary.withOpacity(0.3),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ThemeConstants.radiusMedium),
+            borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: ThemeConstants.spacingLarge,
             vertical: ThemeConstants.spacingMedium,
           ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: ThemeConstants.lightSurface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingLarge,
+          vertical: ThemeConstants.spacingMedium,
         ),
       ),
     );
@@ -94,27 +119,52 @@ class WeatherApp extends StatelessWidget {
         onBackground: ThemeConstants.darkOnBackground,
         onError: ThemeConstants.darkOnError,
       ),
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         centerTitle: true,
         elevation: 0,
-        backgroundColor: ThemeConstants.darkBackground,
+        scrolledUnderElevation: 0,
+        backgroundColor: Colors.transparent,
         foregroundColor: ThemeConstants.darkOnBackground,
+        titleTextStyle: const TextStyle(
+          fontSize: ThemeConstants.fontSizeLarge,
+          fontWeight: FontWeight.w600,
+          color: ThemeConstants.darkOnBackground,
+        ),
       ),
       cardTheme: CardThemeData(
-        elevation: 2,
+        elevation: ThemeConstants.elevationMedium,
+        shadowColor: Colors.black.withOpacity(0.3),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(ThemeConstants.radiusMedium),
+          borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
+        ),
+        margin: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingMedium,
+          vertical: ThemeConstants.spacingSmall,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
+          elevation: ThemeConstants.elevationMedium,
+          shadowColor: Colors.black.withOpacity(0.5),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(ThemeConstants.radiusMedium),
+            borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
           ),
           padding: const EdgeInsets.symmetric(
             horizontal: ThemeConstants.spacingLarge,
             vertical: ThemeConstants.spacingMedium,
           ),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
+          borderSide: BorderSide.none,
+        ),
+        filled: true,
+        fillColor: ThemeConstants.darkSurface,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: ThemeConstants.spacingLarge,
+          vertical: ThemeConstants.spacingMedium,
         ),
       ),
     );

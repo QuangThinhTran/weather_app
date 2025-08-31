@@ -29,44 +29,39 @@ class HourlyForecastWidget extends StatelessWidget {
 
     final theme = Theme.of(context);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: ThemeConstants.spacingMedium,
-        vertical: ThemeConstants.spacingSmall,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeaderRow(theme),
-            const SizedBox(height: ThemeConstants.spacingMedium),
-            RepaintBoundary(
-              child: SizedBox(
-                height: 100,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  physics: const BouncingScrollPhysics(),
-                  cacheExtent: 800.0,
-                  itemCount: next24Hours.length,
-                  separatorBuilder: (context, index) => 
-                      const SizedBox(width: ThemeConstants.spacingSmall),
-                  itemBuilder: (context, index) {
-                    final forecast = next24Hours[index];
-                    final isNow = index == 0;
-                    
-                    return RepaintBoundary(
-                      child: GestureDetector(
-                        onTap: () => _showDetailedWeather(context, forecast),
-                        child: _buildHourlyItem(theme, forecast, isNow),
-                      ),
-                    );
-                  },
-                ),
+    return Container(
+      margin: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeaderRow(theme),
+          const SizedBox(height: ThemeConstants.spacingMedium),
+          RepaintBoundary(
+            child: SizedBox(
+              height: 120,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
+                cacheExtent: 800.0,
+                itemCount: next24Hours.length,
+                padding: const EdgeInsets.symmetric(horizontal: ThemeConstants.spacingMedium),
+                separatorBuilder: (context, index) => 
+                    const SizedBox(width: ThemeConstants.spacingMedium),
+                itemBuilder: (context, index) {
+                  final forecast = next24Hours[index];
+                  final isNow = index == 0;
+                  
+                  return RepaintBoundary(
+                    child: GestureDetector(
+                      onTap: () => _showDetailedWeather(context, forecast),
+                      child: _buildHourlyItem(theme, forecast, isNow),
+                    ),
+                  );
+                },
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -79,22 +74,39 @@ class HourlyForecastWidget extends StatelessWidget {
   }
 
   Widget _buildHeaderRow(ThemeData theme) {
-    return Row(
-      children: [
-        Icon(
-          Icons.schedule,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
-        const SizedBox(width: ThemeConstants.spacingSmall),
-        Text(
-          'DỰ BÁO THEO GIỜ',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.primary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: ThemeConstants.spacingMedium),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(ThemeConstants.spacingSmall),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(ThemeConstants.radiusSmall),
+            ),
+            child: Icon(
+              Icons.schedule_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: ThemeConstants.spacingMedium),
+          Text(
+            'DỰ BÁO THEO GIỜ',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.3),
+                  offset: const Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -131,20 +143,29 @@ class HourlyForecastWidget extends StatelessWidget {
     final timeFormat = DateFormat('HH:mm');
     final displayTime = isNow ? 'Bây giờ' : timeFormat.format(forecast.dateTime);
     
-    return Container(
-      width: 70,
-      padding: const EdgeInsets.symmetric(
-        vertical: ThemeConstants.spacingSmall,
-        horizontal: ThemeConstants.spacingXSmall,
-      ),
-      decoration: isNow ? BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withOpacity(0.3),
-        borderRadius: BorderRadius.circular(ThemeConstants.radiusSmall),
+    return AnimatedContainer(
+      duration: ThemeConstants.animationFast,
+      width: 80,
+      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      decoration: BoxDecoration(
+        color: isNow 
+            ? Colors.white.withOpacity(0.3)
+            : Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
         border: Border.all(
-          color: theme.colorScheme.primary.withOpacity(0.3),
-          width: 1,
+          color: isNow 
+              ? Colors.white.withOpacity(0.6)
+              : Colors.white.withOpacity(0.3),
+          width: isNow ? 2 : 1,
         ),
-      ) : null,
+        boxShadow: isNow ? [
+          BoxShadow(
+            color: Colors.white.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ] : null,
+      ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
@@ -153,12 +174,12 @@ class HourlyForecastWidget extends StatelessWidget {
             displayTime,
             style: theme.textTheme.bodySmall?.copyWith(
               fontSize: 12,
-              fontWeight: isNow ? FontWeight.w600 : FontWeight.normal,
-              color: isNow 
-                  ? theme.colorScheme.primary
-                  : theme.colorScheme.onSurface.withOpacity(0.7),
+              fontWeight: isNow ? FontWeight.w700 : FontWeight.w500,
+              color: Colors.white.withOpacity(0.95),
             ),
             textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
           
           // Weather icon
@@ -172,9 +193,16 @@ class HourlyForecastWidget extends StatelessWidget {
           // Temperature
           Text(
             '${forecast.temperature.round()}°',
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: isNow ? theme.colorScheme.primary : null,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.3),
+                  offset: const Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ],
             ),
           ),
           
@@ -193,7 +221,8 @@ class HourlyForecastWidget extends StatelessWidget {
                   '${forecast.precipitationChance}%',
                   style: theme.textTheme.bodySmall?.copyWith(
                     fontSize: 10,
-                    color: Colors.blue.shade400,
+                    color: Colors.lightBlueAccent,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

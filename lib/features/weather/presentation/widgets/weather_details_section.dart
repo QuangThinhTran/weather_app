@@ -70,7 +70,7 @@ class WeatherDetailsSection extends StatelessWidget {
                 _buildDetailItem(
                   context,
                   icon: '🌡',
-                  label: 'Cảm giác như',
+                  label: 'Nhiệt độ',
                   value: '${weather.feelsLike.round()}°',
                 ),
                 _buildDetailItem(

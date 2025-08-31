@@ -10,6 +10,25 @@ class DailyForecastWidget extends StatelessWidget {
   final List<HourlyForecast>? hourlyForecasts;
   final Weather? currentWeather;
 
+  // Cache heavy calculations
+  static const _vietnameseDayNames = {
+    1: 'T2',  // Monday
+    2: 'T3',  // Tuesday  
+    3: 'T4',  // Wednesday
+    4: 'T5',  // Thursday
+    5: 'T6',  // Friday
+    6: 'T7',  // Saturday
+    7: 'CN',  // Sunday
+  };
+
+  static const _mockConditions = [
+    {'condition': 'Sunny', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/113.png', 'rain': 0},
+    {'condition': 'Partly cloudy', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/116.png', 'rain': 10},
+    {'condition': 'Cloudy', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/119.png', 'rain': 20},
+    {'condition': 'Light rain', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/296.png', 'rain': 60},
+    {'condition': 'Thunderstorm', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/200.png', 'rain': 80},
+  ];
+
   const DailyForecastWidget({
     super.key,
     required this.dailyForecasts,
@@ -23,76 +42,98 @@ class DailyForecastWidget extends StatelessWidget {
     // Extend to 10 days if we have less than 10 days from API
     final extendedForecasts = _extendForecastTo10Days(dailyForecasts);
     
-    return Card(
-      margin: const EdgeInsets.symmetric(
-        horizontal: ThemeConstants.spacingMedium,
-        vertical: ThemeConstants.spacingSmall,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeaderRow(theme),
-            const SizedBox(height: ThemeConstants.spacingMedium),
-            RepaintBoundary(
-              child: Column(
-                children: _buildDailyItems(extendedForecasts, theme),
-              ),
+    return Container(
+      margin: const EdgeInsets.all(ThemeConstants.spacingMedium),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildHeaderRow(theme),
+          const SizedBox(height: ThemeConstants.spacingLarge),
+          RepaintBoundary(
+            child: ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: extendedForecasts.length,
+              itemBuilder: (context, index) {
+                final forecast = extendedForecasts[index];
+                final isToday = index == 0;
+                
+                return Column(
+                  children: [
+                    RepaintBoundary(
+                      child: AnimatedContainer(
+                        duration: ThemeConstants.animationFast,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: ThemeConstants.spacingMedium,
+                          vertical: ThemeConstants.spacingXSmall,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isToday 
+                              ? Colors.white.withOpacity(0.25)
+                              : Colors.white.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(ThemeConstants.radiusLarge),
+                          border: Border.all(
+                            color: isToday 
+                                ? Colors.white.withOpacity(0.4)
+                                : Colors.white.withOpacity(0.2),
+                            width: isToday ? 1.5 : 1,
+                          ),
+                        ),
+                        child: GestureDetector(
+                          onTap: () => _showDetailedWeather(context, forecast),
+                          child: _buildDailyItem(theme, forecast, isToday),
+                        ),
+                      ),
+                    ),
+                    if (index < extendedForecasts.length - 1)
+                      const SizedBox(height: ThemeConstants.spacingSmall),
+                  ],
+                );
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildHeaderRow(ThemeData theme) {
-    return Row(
-      children: [
-        Icon(
-          Icons.calendar_today,
-          size: 20,
-          color: theme.colorScheme.primary,
-        ),
-        const SizedBox(width: ThemeConstants.spacingSmall),
-        Text(
-          'DỰ BÁO 10 NGÀY TỚI',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
-            color: theme.colorScheme.primary,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: ThemeConstants.spacingMedium),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(ThemeConstants.spacingSmall),
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(ThemeConstants.radiusSmall),
+            ),
+            child: Icon(
+              Icons.calendar_month_rounded,
+              size: 20,
+              color: Colors.white,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(width: ThemeConstants.spacingMedium),
+          Text(
+            'DỰ BÁO 10 NGÀY TỚI',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              shadows: [
+                Shadow(
+                  color: Colors.black.withOpacity(0.3),
+                  offset: const Offset(0, 1),
+                  blurRadius: 2,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  List<Widget> _buildDailyItems(List<DailyForecast> extendedForecasts, ThemeData theme) {
-    return extendedForecasts.asMap().entries.map((entry) {
-      final index = entry.key;
-      final forecast = entry.value;
-      final isToday = index == 0;
-      
-      return Column(
-        children: [
-          RepaintBoundary(
-            child: Builder(
-              builder: (context) {
-                return GestureDetector(
-                  onTap: () => _showDetailedWeather(context, forecast),
-                  child: _buildDailyItem(theme, forecast, isToday),
-                );
-              }
-            ),
-          ),
-          if (index < extendedForecasts.length - 1)
-            Divider(
-              height: 1,
-              color: theme.colorScheme.outline.withOpacity(0.2),
-            ),
-        ],
-      );
-    }).toList();
-  }
 
   void _showDetailedWeather(BuildContext context, DailyForecast selectedDay) {
     // Get hourly forecasts for the selected day (optimized)
@@ -127,18 +168,26 @@ class DailyForecastWidget extends StatelessWidget {
     final displayDay = isToday ? 'Hôm nay' : _getVietnameseDayName(forecast.date);
     
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: ThemeConstants.spacingSmall),
+      padding: const EdgeInsets.all(ThemeConstants.spacingMedium),
       child: Row(
         children: [
           // Day of week
-          SizedBox(
-            width: 70,
+          Expanded(
+            flex: 2,
             child: Text(
               displayDay,
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: isToday ? FontWeight.w600 : FontWeight.normal,
-                color: isToday ? theme.colorScheme.primary : null,
+                fontWeight: isToday ? FontWeight.w700 : FontWeight.w500,
+                color: Colors.white.withOpacity(0.95),
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
           
@@ -148,29 +197,30 @@ class DailyForecastWidget extends StatelessWidget {
           RepaintBoundary(
             child: WeatherIcon(
               iconUrl: forecast.iconUrl,
-              size: 32,
+              size: 28,
             ),
           ),
           
-          const SizedBox(width: ThemeConstants.spacingMedium),
+          const SizedBox(width: ThemeConstants.spacingSmall),
           
           // Precipitation chance
           SizedBox(
-            width: 40,
+            width: 32,
             child: forecast.precipitationChance > 0
-                ? Row(
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.water_drop,
-                        size: 12,
+                        size: 10,
                         color: Colors.blue.shade400,
                       ),
-                      const SizedBox(width: 2),
                       Text(
                         '${forecast.precipitationChance}%',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          fontSize: 11,
-                          color: Colors.blue.shade400,
+                          fontSize: 9,
+                          color: Colors.lightBlueAccent,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ],
@@ -178,22 +228,28 @@ class DailyForecastWidget extends StatelessWidget {
                 : null,
           ),
           
-          const Spacer(),
+          const SizedBox(width: ThemeConstants.spacingSmall),
           
           // Min temperature
-          Text(
-            '${forecast.minTemperature.round()}°',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withOpacity(0.6),
+          SizedBox(
+            width: 28,
+            child: Text(
+              '${forecast.minTemperature.round()}°',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontSize: 13,
+                color: Colors.white.withOpacity(0.7),
+                fontWeight: FontWeight.w500,
+              ),
+              textAlign: TextAlign.center,
             ),
           ),
           
-          const SizedBox(width: ThemeConstants.spacingMedium),
+          const SizedBox(width: ThemeConstants.spacingSmall),
           
           // Temperature bar (visual representation)
           RepaintBoundary(
             child: Container(
-              width: 60,
+              width: 40,
               height: 4,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(2),
@@ -208,17 +264,26 @@ class DailyForecastWidget extends StatelessWidget {
             ),
           ),
           
-          const SizedBox(width: ThemeConstants.spacingMedium),
+          const SizedBox(width: ThemeConstants.spacingSmall),
           
           // Max temperature
           SizedBox(
-            width: 35,
+            width: 32,
             child: Text(
               '${forecast.maxTemperature.round()}°',
               style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
+                shadows: [
+                  Shadow(
+                    color: Colors.black.withOpacity(0.3),
+                    offset: const Offset(0, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -268,15 +333,7 @@ class DailyForecastWidget extends StatelessWidget {
     final dayOffset = date.day % 7;
     final tempVariation = (dayOffset - 3) * 2; // -6 to +6 degrees variation
     
-    final conditions = [
-      {'condition': 'Sunny', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/113.png', 'rain': 0},
-      {'condition': 'Partly cloudy', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/116.png', 'rain': 10},
-      {'condition': 'Cloudy', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/119.png', 'rain': 20},
-      {'condition': 'Light rain', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/296.png', 'rain': 60},
-      {'condition': 'Thunderstorm', 'icon': 'https://cdn.weatherapi.com/weather/64x64/day/200.png', 'rain': 80},
-    ];
-    
-    final selectedCondition = conditions[dayOffset % conditions.length];
+    final selectedCondition = _mockConditions[dayOffset % _mockConditions.length];
     
     return DailyForecast(
       date: date,
@@ -292,17 +349,7 @@ class DailyForecastWidget extends StatelessWidget {
   }
 
   String _getVietnameseDayName(DateTime date) {
-    final dayNames = {
-      1: 'T2',  // Monday
-      2: 'T3',  // Tuesday  
-      3: 'T4',  // Wednesday
-      4: 'T5',  // Thursday
-      5: 'T6',  // Friday
-      6: 'T7',  // Saturday
-      7: 'CN',  // Sunday
-    };
-    
-    return dayNames[date.weekday] ?? 'T${date.weekday}';
+    return _vietnameseDayNames[date.weekday] ?? 'T${date.weekday}';
   }
 
 }
